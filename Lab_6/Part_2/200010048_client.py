@@ -6,7 +6,7 @@ client_name = "200010048_client"
 random_integer = randint(1, 100)
 message = f'{client_name} {random_integer}'
 
-target_host = "192.168.114.139"
+target_host = "localhost"
 target_port = 80
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
