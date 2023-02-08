@@ -1,11 +1,9 @@
 import socket
 from random import randint
 
-server_name = "200010048_server"
+server_name = "200010048_weberver"
 port_number = 80
 host_ip = "localhost"
-
-random_integer = randint(1, 100)
 
 
 socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -17,18 +15,20 @@ while True:
     socket.listen(1)
     sock, addr = socket.accept()
 
-    data = sock.recv(16384)
-    text = data.decode('utf-8')
-    client_name, number = text.split(" ")
-    number = int(number)
-    if (number > 100 or number < 1):
-        print("Integer out-of-range, Server Shutting Down ...")
-        socket.close()
-        break
-    else:
-        print("----------------------------------------------------------")
-        print("Client Name:", client_name, "Server Name:", server_name)
-        print("CLient Number:", number, "Server Number:",
-              random_integer, "Sum:", number+random_integer)
-        message = f'{server_name} {random_integer}'
-        sock.send(message.encode())
+    data = sock.recv(4096)
+    try:
+        filename = data.decode('utf-8').strip().split(" ")[1][1:]
+        response_header = "HTTP/1.1 200 OK\n"
+        response_header += "Content-Type: text/html\r\n\r\n"
+        with open(filename, "r") as f:
+            sock.send(response_header.encode())
+            for line in f.readlines():
+                sock.send(line.encode())
+        print("Sent 200 response to client")
+    except Exception as e:
+        response_header = "HTTP/1.1 404 Not Found\r\n\r\n"
+        sock.send(response_header.encode())
+        response_message = "404 Not Found\r\n\r\n"
+        sock.send(response_message.encode())
+        print("Sent 404 response to client")
+        pass
