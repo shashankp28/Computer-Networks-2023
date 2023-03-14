@@ -48,5 +48,6 @@ for sequence_no in range(1, number_of_packets + 1):
 print()
 print("----------------------------------------")
 print("Ping Statistics:")
-print(f"Average RTT: {avg_RTT / number_of_packets} ms")
+if packets_lost!=0: print(f"Average RTT: {avg_RTT / (number_of_packets - packets_lost)} s")
+else: print(f"Average RTT: NaN s")
 print(f"Packets Lost: {packets_lost} ({packets_lost / number_of_packets * 100} %)")
