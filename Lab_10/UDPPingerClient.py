@@ -4,7 +4,7 @@ from socket import *
 from time import time, sleep
 
 # Set server host and port
-server_host = '10.196.10.249'
+server_host = 'localhost'
 server_port = 12000
 
 # Set client port
