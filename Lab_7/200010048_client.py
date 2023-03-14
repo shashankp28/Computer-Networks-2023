@@ -3,7 +3,7 @@ import base64
 import sys
 import ssl
 
-
+to_email = input("Type Email Address of Recipient: ")
 
 msg = "\r\n I love computer networks!" 
 endmsg = "\r\n.\r\n"
@@ -64,7 +64,7 @@ print("AUTH command sent")
 # Send MAIL FROM command and print server response. 
 
 # Fill in start
-mailFrom = "MAIL FROM: <shashankp2832@gmail.com>\r\n"
+mailFrom = f"MAIL FROM: <{username}>\r\n"
 clientSocket.send(mailFrom.encode())
 recv1 = clientSocket.recv(1024).decode() 
 print(recv1)
@@ -77,7 +77,7 @@ print("MAIL FROM command sent")
 # Send RCPT TO command and print server response.
 
 # Fill in start
-rcptTo = "RCPT TO: <shashankp2832@gmail.com>\r\n"
+rcptTo = f"RCPT TO: <{to_email}>\r\n"
 clientSocket.send(rcptTo.encode())
 recv1 = clientSocket.recv(1024).decode() 
 print(recv1)
