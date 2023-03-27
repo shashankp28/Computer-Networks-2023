@@ -31,14 +31,10 @@ class Peer:
         self.connect_manager()
         timestamp = 0
         while True:
-            if timestamp == 5:
-                self.disconnect_manager()
-                break
             try:
                 message = self.manager_conn_socket.recv(1024).decode()
                 if message == "CHECK:":
                     self.manager_conn_socket.send("AVAILABLE:".encode())
-                    print("Check Passed...")
                 elif message != "":
                     print(message)
             except Exception as e:
@@ -53,7 +49,10 @@ class Peer:
         print("MANAGER:", message.decode())
         self.manager_conn_socket.close()
     
-    
+    def downloader(self):
+        while True:
+            pass 
+        
     def start(self):
         
         # Setup server socket
@@ -68,13 +67,11 @@ class Peer:
         # self.peer_client_socket = self.get_new_socket(1)
         
         thread_1 = Thread(target=self.manager_listner)
-        thread_2 = Thread(target=self.new_connections)
+        thread_2 = Thread(target=self.downloader)
         
         thread_1.start()
         thread_2.start()
         
-    def new_connections(self):
-        pass
 
 
 # num = int(sys.argv[2])
