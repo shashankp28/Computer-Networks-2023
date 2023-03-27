@@ -28,7 +28,11 @@ class Peer:
         
     def manager_listner(self):
         self.connect_manager()
+        timestamp = 0
         while True:
+            if timestamp == 5:
+                self.disconnect_manager()
+                break
             try:
                 message = self.manager_conn_socket.recv(1024).decode()
                 if message == "CHECK:":
@@ -38,6 +42,7 @@ class Peer:
                     print(message)
             except Exception as e:
                 pass
+            timestamp += 1
 
 
         

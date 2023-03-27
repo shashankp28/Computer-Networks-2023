@@ -60,20 +60,14 @@ class Manager:
         flag = True
         print(split_message)
         if split_message[0] == 'QUIT':
-            try:
-                username = split_message[1]
-                print(username)
-                del self.active_peers[username]
-                del self.active_conns[username]
-                connection.send('SUCCESS:De-Registered'.encode())
-
-            except Exception as e:
-                print(e)
-                connection.send('ERROR:Un-Authorized'.encode())
+            return False
             
         elif split_message[0] == 'LIST':
             peer_message = self.peer_list_to_string()
             connection.send(peer_message.encode())
+            return True
+        
+        return True
 
 
     def start_transaction(self, username, address, port, connection):
@@ -84,7 +78,7 @@ class Manager:
                 if timestamp%10 != 0:
                     try:
                         message = connection.recv(1024)
-                        self.handle_message(message.decode(), connection)
+                        assert self.handle_message(message.decode(), connection)
                     except TimeoutError as e:
                         pass
                 else:
@@ -101,6 +95,7 @@ class Manager:
         self.active_peers.pop(username)
         broadcast_message = self.peer_list_to_string()
         self.broadcast_message(broadcast_message)
+        connection.send("SUCCESS:Quit".encode())
         connection.close()
         print("Ended Transaction ...")
         return
