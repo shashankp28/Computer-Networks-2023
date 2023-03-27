@@ -1,7 +1,7 @@
+import sys
 import socket
 from time import sleep
 from threading import Thread
-import sys
 
 
 class Peer:
@@ -19,6 +19,7 @@ class Peer:
         if timeout != float('inf'):
             temp_socket.settimeout(timeout)
         return temp_socket
+
 
     def connect_manager(self):
         self.manager_conn_socket.connect(self.manager_address)
@@ -66,8 +67,8 @@ class Peer:
         # TODO: Setup peer connection socket
         # self.peer_client_socket = self.get_new_socket(1)
         
-        thread_1 = Thread(target=self.new_connections)
-        thread_2 = Thread(target=self.manager_listner)
+        thread_1 = Thread(target=self.manager_listner)
+        thread_2 = Thread(target=self.new_connections)
         
         thread_1.start()
         thread_2.start()
@@ -76,7 +77,7 @@ class Peer:
         pass
 
 
-# num = int(sys.argv[1])
+# num = int(sys.argv[2])
 num = 0
 # username = input("Type your username: ")
 username = f'username{num}'

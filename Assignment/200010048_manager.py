@@ -114,8 +114,7 @@ class Manager:
                 connection.send('SUCCESS:Registered'.encode())
                 broadcast_message = self.peer_list_to_string()
                 self.broadcast_message(broadcast_message)
-                new_thread = Thread(
-                    target=self.start_transaction, args=(username, address, port, connection))
+                new_thread = Thread(target=self.start_transaction, args=(username, address, port, connection))
                 new_thread.start()
             except Exception as e:
                 connection.send('ERROR:Bad Request'.encode())
