@@ -75,7 +75,7 @@ class Manager:
         timestamp = 0
         while True:
             try:
-                if timestamp%10 != 0:
+                if timestamp%3 != 0:
                     try:
                         message = connection.recv(1024)
                         assert self.handle_message(message.decode(), connection)
@@ -95,8 +95,11 @@ class Manager:
         self.active_peers.pop(username)
         broadcast_message = self.peer_list_to_string()
         self.broadcast_message(broadcast_message)
-        connection.send("SUCCESS:Quit".encode())
-        connection.close()
+        try:
+            connection.send("SUCCESS:Quit".encode())
+            connection.close()
+        except:
+            pass
         print("Ended Transaction ...")
         return
 
