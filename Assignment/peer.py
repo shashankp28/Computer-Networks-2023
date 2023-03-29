@@ -4,6 +4,7 @@ from time import sleep
 from threading import Thread
 import os
 
+
 class Peer:
 
     def __init__(self, manager_host, manager_port, host, port, username, max):
@@ -50,16 +51,17 @@ class Peer:
         responses = []
         threads = []
         for username, address in self.peer_data.items():
-            if username == self.username: continue
+            if username == self.username:
+                continue
             temp_thread = Thread(target=self.parallel_asker_help, args=(
                 username, address, responses, file_name))
             temp_thread.start()
             threads.append(temp_thread)
-        
-        for i in range(len(threads)): threads[i].join()
+
+        for i in range(len(threads)):
+            threads[i].join()
         print("Responses: ", responses)
         return responses
-
 
     def connect_manager(self):
         self.manager_conn_socket.connect(self.manager_address)
@@ -72,7 +74,8 @@ class Peer:
         self.connect_manager()
         timestamp = 0
         while True:
-            if not self.is_peer_active: break
+            if not self.is_peer_active:
+                break
             try:
                 message = self.manager_conn_socket.recv(1024).decode()
                 if message == "CHECK:":
@@ -93,10 +96,49 @@ class Peer:
         self.manager_conn_socket.close()
         self.is_peer_active = False
 
+    def fetch_helper(self, file_name, chunk, index, file_bytes, remaining, address):
+        try:
+            temp_socket = self.get_new_socket(1)
+            temp_socket.connect(address)
+            message = f"REQUEST:{file_name}|{chunk[0]}|{chunk[1]}"
+            temp_socket.send(message.encode())
+            data = temp_socket.recv(65535)
+            file_bytes[index] = data
+            remaining[index] = True
+        except:
+            return
+        pass
+
+    def handle_fetching(self, file_name, chunks):
+        remaining = [False for i in range(len(chunks))]
+        file_bytes = [b'' for i in range(len(chunks))]
+        while sum(remaining) < len(chunks):
+            threads = []
+            index = 0
+            available_peers = self.parallel_asker(file_name)
+            peer_length = len(available_peers)
+            peer_index = 0
+            if available_peers == 0:
+                print("File not found with any peer...")
+                return
+            while index < len(chunks):
+                if remaining[index]:
+                    index += 1
+                    continue
+                file_fetch_thread = Thread(target=self.fetch_helper, args=(
+                    file_name, chunks[index], index, file_bytes, remaining, available_peers[peer_index][0]))
+                threads.append(file_fetch_thread)
+                file_fetch_thread.start()
+                peer_index = (peer_index+1)%peer_length
+                index += 1
+            for i in range(len(threads)):
+                threads[i].join()
+        return file_bytes
+
     def peer_pinger(self):
         while True:
             file_name = input("Enter the file name you want (Q to quit): ")
-            if file_name == 'Q': 
+            if file_name == 'Q':
                 self.disconnect_manager()
                 sys.exit(1)
             if file_name in os.listdir():
@@ -107,8 +149,19 @@ class Peer:
             if len(available_peers) == 0:
                 print("File not found with any peer...")
             else:
-                print("File found with peer...")
-                
+                size = min([peer[1] for peer in available_peers])
+                no_chunks = (size//4096) + 1
+                recieved = [False for i in range(no_chunks)]
+                offsets = [i * size // no_chunks for i in range(no_chunks + 1)]
+                offsets[-1] = size
+                chunks = [(offsets[i], offsets[i+1]) for i in range(no_chunks)]
+                full_file = self.handle_fetching(file_name, chunks)
+                if not full_file:
+                    continue
+                with open(output_name, 'wb') as f:
+                    for chunk in full_file:
+                        f.write(chunk)
+
     def peer_message_handler(self, connection):
         # TODO: Handle messages from peers
         connection.settimeout(5)
@@ -119,27 +172,38 @@ class Peer:
                     file_name = message.split(":")[1]
                     if file_name in os.listdir():
                         print(f"Found Asked File: {file_name}")
-                        connection.send(f"FOUND:{os.path.getsize(file_name)}".encode())
+                        connection.send(
+                            f"FOUND:{os.path.getsize(file_name)}".encode())
                     else:
                         print(f"Not found Asked File: {file_name}")
-
+                if message.startswith("REQUEST:"):
+                    request = message.split(":")[1]
+                    file_name = request.split("|")[0]
+                    start = int(request.split("|")[1])
+                    end = int(request.split("|")[2])
+                    with open(file_name, 'rb') as f:
+                        f.seek(start)
+                        data = f.read(end-start)
+                        connection.send(data)
+                    
             except:
                 break
         print("Closed Connection with Peer...")
         connection.close()
-        
+
     def peer_listener(self):
         print("Started Listening for new peers ...")
         while True:
             try:
                 connection, addr = self.peer_server_socket.accept()
-                new_thread = Thread(target=self.peer_message_handler, args=(connection,))
+                new_thread = Thread(
+                    target=self.peer_message_handler, args=(connection,))
                 new_thread.start()
             except Exception as e:
-                if not self.is_peer_active: break
+                if not self.is_peer_active:
+                    break
                 pass
 
-    
     def start(self):
 
         # Setup server socket
@@ -149,7 +213,7 @@ class Peer:
 
         # Setup manager connection socket
         self.manager_conn_socket = self.get_new_socket(1)
-        
+
         # Create peer folders
         if (not os.path.exists(self.username)):
             os.mkdir(self.username)
