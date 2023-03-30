@@ -60,7 +60,6 @@ class Peer:
 
         for i in range(len(threads)):
             threads[i].join()
-        print("Responses: ", responses)
         return responses
 
     def connect_manager(self):
@@ -68,7 +67,6 @@ class Peer:
         self.manager_conn_socket.send(
             f'JOIN:{self.username}:{self.server_host}:{self.server_port}'.encode())
         message = self.manager_conn_socket.recv(1024)
-        print("MANAGER:", message.decode())
 
     def manager_listner(self):
         self.connect_manager()
@@ -92,25 +90,21 @@ class Peer:
     def disconnect_manager(self):
         self.manager_conn_socket.send(f'QUIT:{self.username}'.encode())
         message = self.manager_conn_socket.recv(1024)
-        print("MANAGER:", message.decode())
         self.manager_conn_socket.close()
         self.is_peer_active = False
 
     def fetch_helper(self, file_name, chunk, index, file_bytes, remaining, username):
         try:
             address = self.peer_data[username]
-            print(file_name, chunk, index, file_bytes, remaining, address)
             temp_socket = self.get_new_socket(1)
             temp_socket.connect(address)
-            print("Requesting chunk no. ", index, " from ", address, " for file ", file_name)
             message = f"REQUEST:{file_name}|{chunk[0]}|{chunk[1]}"
             temp_socket.send(message.encode())
             data = temp_socket.recv(65535)
-            print("Chunck no. ", index, " received from ", address)
             file_bytes[index] = data
             remaining[index] = True
+            print("Chunk ", index, " downloaded...", "From ", username)
         except Exception as e:
-            print(e)
             return
         pass
 
@@ -134,7 +128,7 @@ class Peer:
                     file_name, chunks[index], index, file_bytes, remaining, available_peers[peer_index][0]))
                 threads.append(file_fetch_thread)
                 file_fetch_thread.start()
-                peer_index = (peer_index+1)%peer_length
+                peer_index = (peer_index+1) % peer_length
                 index += 1
             for i in range(len(threads)):
                 threads[i].join()
@@ -161,9 +155,7 @@ class Peer:
                 offsets = [i * size // no_chunks for i in range(no_chunks + 1)]
                 offsets[-1] = size
                 chunks = [(offsets[i], offsets[i+1]) for i in range(no_chunks)]
-                print("Chunks: ", chunks)
                 full_file = self.handle_fetching(file_name, chunks)
-                print("Chunks: ", chunks)
                 if not full_file:
                     continue
                 with open(output_name, 'wb') as f:
@@ -178,12 +170,9 @@ class Peer:
                 if message.startswith("ASK:"):
                     file_name = message.split(":")[1]
                     if file_name in os.listdir():
-                        print(f"Found Asked File: {file_name}")
                         connection.send(
                             f"FOUND:{os.path.getsize(file_name)}".encode())
-                    else:
-                        print(f"Not found Asked File: {file_name}")
-                        
+
                 elif message.startswith("REQUEST:"):
                     request = message.split(":")[1]
                     file_name = request.split("|")[0]
@@ -193,7 +182,7 @@ class Peer:
                         f.seek(start)
                         data = f.read(end-start)
                         connection.send(data)
-                    
+
             except:
                 break
         print("Closed Connection with Peer...")
