@@ -1,10 +1,19 @@
 import socket
+import argparse
 from time import sleep, time
 from threading import Thread
 
 
 class Manager:
     def __init__(self, host, port, max):
+        """
+        Initializes a Manager instance.
+
+        Parameters:
+        - host (str): the hostname or IP address of the machine where the Manager is running
+        - port (int): the port number the Manager will listen to incoming connections on
+        - max (int): the maximum number of peers the Manager can handle at once
+        """
         self.manager_host = host
         self.manager_port = port
         self.active_peers = dict()
@@ -14,12 +23,25 @@ class Manager:
         self.manager_client_socket = None
 
     def get_new_socket(self, timeout=float('inf')):
+        """
+        Creates a new socket instance.
+
+        Parameters:
+        - timeout (float): optional; the timeout value for the socket (default: infinity)
+
+        Returns:
+        - temp_socket (socket): a new socket instance
+        """
         temp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if timeout != float('inf'):
             temp_socket.settimeout(timeout)
         return temp_socket
 
     def start(self):
+        """
+        Starts the Manager instance and listens for incoming connections from peers.
+        """
+        
         # Manager Server
         self.manager_socket = self.get_new_socket()
         self.manager_socket.bind((self.manager_host, self.manager_port))
@@ -38,6 +60,9 @@ class Manager:
         thread_2.join()
     
     def printer_help(self):
+        """
+        Prints a table of the currently active peers.
+        """
         print("Showing Availabel Peers...")
 
         username_heading = 'Username'
@@ -79,23 +104,44 @@ class Manager:
         return
 
     def broadcast_message(self, message):
+        """Sends the given message to all active connections except the sender.
+
+        Args:
+        message (str): The message to be sent to all active connections.
+        """
         for username, connection in self.active_conns.items():
             connection.send(message.encode())
         self.printer_help()
         return
 
     def peer_list_to_string(self):
+        """Returns a string representation of the active peers list.
+
+        Returns:
+        str: A string representation of the active peers list in the following format:
+            "LIST:username1|address1|port1$username2|address2|port2$..."
+        """
         peer_list = ""
         for username, address in self.active_peers.items():
             peer_list += f'{username}|{address[0]}|{address[1]}$'
         return "LIST:"+peer_list
 
     def printer(self):
+        """Continuously prints the active connections list every 2 seconds."""
         while True:
             self.printer_help()
             sleep(2)
 
     def handle_message(self, message, connection):
+        """Handles incoming messages from connections and sends appropriate responses.
+
+        Args:
+        message (str): The message received from the connection.
+        connection (socket): The socket connection from which the message was received.
+
+        Returns:
+        bool: True if the message was successfully handled, False if the message is a QUIT message.
+        """
         split_message = message.split(':')
         flag = True
         print(split_message)
@@ -110,6 +156,14 @@ class Manager:
         return True
 
     def start_transaction(self, username, address, port, connection):
+        """Starts a new thread for managing a connection with a peer.
+
+        Args:
+        username (str): The username of the peer.
+        address (str): The IP address of the peer.
+        port (str): The port number of the peer.
+        connection (socket): The socket connection with the peer.
+        """
         timestamp = 0
         while True:
             try:
@@ -141,6 +195,7 @@ class Manager:
         return
 
     def new_connections(self):
+        """Listens for new peer connections and starts a new thread for each connection."""
         print("Started Listening for new peers ...")
         while True:
             try:
@@ -162,5 +217,12 @@ class Manager:
                 connection.send('ERROR:Bad Request'.encode())
 
 
-manager = Manager(host='localhost', port=12000, max=10)
+parser = argparse.ArgumentParser(description='Start a manager.')
+parser.add_argument('--host', default='localhost', help='host address')
+parser.add_argument('--port', type=int, default=12000, help='port number')
+parser.add_argument('--max', type=int, default=20, help='maximum number of connections')
+
+args = parser.parse_args()
+
+manager = Manager(host=args.host, port=args.port, max=args.max)
 manager.start()
