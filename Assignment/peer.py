@@ -66,11 +66,17 @@ class Peer:
         self.manager_conn_socket.connect(self.manager_address)
         self.manager_conn_socket.send(
             f'JOIN:{self.username}:{self.server_host}:{self.server_port}'.encode())
-        message = self.manager_conn_socket.recv(1024)
+        message = self.manager_conn_socket.recv(1024).decode()
+        if message.startswith("ERROR:"):
+            print("Error Estabilishing connection...Try changing username... ")
+            return False
+        return True
+        
 
     def manager_listner(self):
-        self.connect_manager()
-        timestamp = 0
+        if not self.connect_manager():
+            self.is_peer_active = False
+            return
         while True:
             if not self.is_peer_active:
                 break
@@ -85,7 +91,6 @@ class Peer:
                     self.peer_data = new_dict
             except Exception as e:
                 pass
-            timestamp += 1
 
     def disconnect_manager(self):
         self.manager_conn_socket.send(f'QUIT:{self.username}'.encode())
@@ -164,8 +169,10 @@ class Peer:
 
     def peer_message_handler(self, connection):
         # TODO: Handle messages from peers
+        index = 0
         while True:
             try:
+                index += 1
                 message = connection.recv(1024).decode()
                 if message.startswith("ASK:"):
                     file_name = message.split(":")[1]
@@ -182,10 +189,12 @@ class Peer:
                         f.seek(start)
                         data = f.read(end-start)
                         connection.send(data)
+                
+                else:
+                    break
 
-            except:
+            except Exception as e:
                 break
-        print("Closed Connection with Peer...")
         connection.close()
 
     def peer_listener(self):
@@ -215,6 +224,12 @@ class Peer:
         if (not os.path.exists(self.username)):
             os.mkdir(self.username)
         os.chdir(self.username)
+        print()
+        print("----------------------------------------------------------------------")
+        print(f"Store all sharable files in the folder named  '{self.username}'  !!!")
+        print("---------------------------------------------------------------------")
+        print()
+
 
         thread_1 = Thread(target=self.manager_listner)
         thread_2 = Thread(target=self.peer_listener)
