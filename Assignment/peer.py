@@ -96,16 +96,21 @@ class Peer:
         self.manager_conn_socket.close()
         self.is_peer_active = False
 
-    def fetch_helper(self, file_name, chunk, index, file_bytes, remaining, address):
+    def fetch_helper(self, file_name, chunk, index, file_bytes, remaining, username):
         try:
+            address = self.peer_data[username]
+            print(file_name, chunk, index, file_bytes, remaining, address)
             temp_socket = self.get_new_socket(1)
             temp_socket.connect(address)
+            print("Requesting chunk no. ", index, " from ", address, " for file ", file_name)
             message = f"REQUEST:{file_name}|{chunk[0]}|{chunk[1]}"
             temp_socket.send(message.encode())
             data = temp_socket.recv(65535)
+            print("Chunck no. ", index, " received from ", address)
             file_bytes[index] = data
             remaining[index] = True
-        except:
+        except Exception as e:
+            print(e)
             return
         pass
 
@@ -151,11 +156,14 @@ class Peer:
             else:
                 size = min([peer[1] for peer in available_peers])
                 no_chunks = (size//4096) + 1
+                print(no_chunks, " chunks will be downloaded...")
                 recieved = [False for i in range(no_chunks)]
                 offsets = [i * size // no_chunks for i in range(no_chunks + 1)]
                 offsets[-1] = size
                 chunks = [(offsets[i], offsets[i+1]) for i in range(no_chunks)]
+                print("Chunks: ", chunks)
                 full_file = self.handle_fetching(file_name, chunks)
+                print("Chunks: ", chunks)
                 if not full_file:
                     continue
                 with open(output_name, 'wb') as f:
@@ -164,7 +172,6 @@ class Peer:
 
     def peer_message_handler(self, connection):
         # TODO: Handle messages from peers
-        connection.settimeout(5)
         while True:
             try:
                 message = connection.recv(1024).decode()
@@ -176,7 +183,8 @@ class Peer:
                             f"FOUND:{os.path.getsize(file_name)}".encode())
                     else:
                         print(f"Not found Asked File: {file_name}")
-                if message.startswith("REQUEST:"):
+                        
+                elif message.startswith("REQUEST:"):
                     request = message.split(":")[1]
                     file_name = request.split("|")[0]
                     start = int(request.split("|")[1])
