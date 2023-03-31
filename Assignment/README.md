@@ -24,7 +24,7 @@ python peer.py --manager_host localhost --manager_port 12000 --host localhost --
 
 
 
-3. In the `peer.py` terminal you should be prompted to enter your unique `port number` and `username`. Once that is done a folder will be created with the entered username. As shown below:
+3. In the `peer.py` terminal you should be prompted to enter your unique `port number` (around 7000) and `username`. Once that is done a folder will be created with the entered username. As shown below:
 ![Peer Terminal](./screenshots/peer_terminal.jpg) <br>
 *Terminal of peer* <br>
 ![Peer Folder](./screenshots/peer_folder.jpg) <br>

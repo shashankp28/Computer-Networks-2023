@@ -144,7 +144,6 @@ class Manager:
         """
         split_message = message.split(':')
         flag = True
-        print(split_message)
         if split_message[0] == 'QUIT':
             return False
 
@@ -180,7 +179,6 @@ class Manager:
                     assert response == "AVAILABLE:"
                 timestamp = (timestamp+1) % 3
             except Exception as e:
-                print(e)
                 break
 
         self.active_conns.pop(username)
