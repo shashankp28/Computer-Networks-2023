@@ -338,9 +338,19 @@ class Peer:
         """
 
         # Setup server socket
-        self.peer_server_socket = self.get_new_socket(2)
-        self.peer_server_socket.bind((self.server_host, self.server_port))
-        self.peer_server_socket.listen(self.max_peers)
+        while True:
+            try:
+                num = int(input("Enter your port number: "))
+                username = input("Type your username: ")
+                self.username = username
+                self.server_port = num
+                self.peer_server_socket = self.get_new_socket(2)
+                self.peer_server_socket.bind((self.server_host, self.server_port))
+                self.peer_server_socket.listen(self.max_peers)
+                break
+            except:
+                print("Port Already in Use...")
+                print()
 
         # Setup manager connection socket
         self.manager_conn_socket = self.get_new_socket(1)
@@ -377,8 +387,7 @@ parser.add_argument('--max', type=int, default=20,
 
 args = parser.parse_args()
 
-num = int(input("Enter your port number: "))
-username = input("Type your username: ")
+
 peer = Peer(manager_host=args.manager_host, manager_port=args.manager_port,
-            host=args.host, port=num, username=username, max=args.max)
+            host=args.host, port=None, username=None, max=args.max)
 peer.start()
