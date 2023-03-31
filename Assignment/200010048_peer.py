@@ -120,7 +120,6 @@ class Peer:
             f'JOIN:{self.username}:{self.server_host}:{self.server_port}'.encode())
         message = self.manager_conn_socket.recv(1024).decode()
         if message.startswith("ERROR:"):
-            print("Error Estabilishing connection...Try changing username... ")
             return False
         return True
 
@@ -131,9 +130,6 @@ class Peer:
         Returns:
             None
         """
-        if not self.connect_manager():
-            self.is_peer_active = False
-            return
         while True:
             if not self.is_peer_active:
                 break
@@ -336,6 +332,9 @@ class Peer:
         creates a folder for the peer, and starts the manager listener, peer listener, 
         and peer pinger threads.
         """
+        
+        # Setup manager connection socket
+        self.manager_conn_socket = self.get_new_socket(1)
 
         # Setup server socket
         while True:
@@ -347,13 +346,14 @@ class Peer:
                 self.peer_server_socket = self.get_new_socket(2)
                 self.peer_server_socket.bind((self.server_host, self.server_port))
                 self.peer_server_socket.listen(self.max_peers)
+                if not self.connect_manager():
+                    print("Username already exists ...")
+                    print()
+                    continue
                 break
-            except:
+            except Exception as e:
                 print("Port Already in Use...")
                 print()
-
-        # Setup manager connection socket
-        self.manager_conn_socket = self.get_new_socket(1)
 
         # Create peer folders
         if (not os.path.exists(self.username)):
