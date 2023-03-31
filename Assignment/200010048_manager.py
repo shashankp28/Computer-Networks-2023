@@ -166,7 +166,7 @@ class Manager:
         timestamp = 0
         while True:
             try:
-                if timestamp % 3 != 0:
+                if timestamp % 3 == 0:
                     try:
                         message = connection.recv(1024)
                         assert self.handle_message(
