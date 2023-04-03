@@ -63,7 +63,7 @@ class Manager:
         """
         Prints a table of the currently active peers.
         """
-        print("Showing Availabel Peers...")
+        print("Showing Available Peers...")
 
         username_heading = 'Username'
         host_heading = 'Host'
