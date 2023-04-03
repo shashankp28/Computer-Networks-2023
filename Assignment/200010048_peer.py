@@ -175,7 +175,7 @@ class Peer:
         """
         try:
             address = self.peer_data[username]
-            temp_socket = self.get_new_socket(1)
+            temp_socket = self.get_new_socket(0.1)
             temp_socket.connect(address)
             message = f"REQUEST:{file_name}|{chunk[0]}|{chunk[1]}"
             temp_socket.send(message.encode())
@@ -205,23 +205,30 @@ class Peer:
             threads = []
             index = 0
             available_peers = self.parallel_asker(file_name)
+            usernames = [x[0] for x in available_peers]
             peer_length = len(available_peers)
             peer_index = 0
-            if available_peers == 0:
+            if len(available_peers) == 0:
                 print("File not found with any peer...")
                 return
             while index < len(chunks):
                 if remaining[index]:
                     index += 1
                     continue
-                file_fetch_thread = Thread(target=self.fetch_helper, args=(
-                    file_name, chunks[index], index, file_bytes, remaining, available_peers[peer_index][0]))
-                threads.append(file_fetch_thread)
-                file_fetch_thread.start()
-                peer_index = (peer_index+1) % peer_length
-                index += 1
-            for i in range(len(threads)):
-                threads[i].join()
+                try:
+                    check_names = [x[0] for x in self.peer_data.items()]
+                    assert all(username in check_names for username in usernames)
+                    file_fetch_thread = Thread(target=self.fetch_helper, args=(
+                        file_name, chunks[index], index, file_bytes, remaining, available_peers[peer_index][0]))
+                    threads.append(file_fetch_thread)
+                    file_fetch_thread.start()
+                    peer_index = (peer_index+1) % peer_length
+                    index += 1
+                except Exception as e:
+                    break
+                finally:
+                    for i in range(len(threads)):
+                        threads[i].join()
         return file_bytes
 
     def peer_pinger(self):
@@ -332,7 +339,7 @@ class Peer:
         creates a folder for the peer, and starts the manager listener, peer listener, 
         and peer pinger threads.
         """
-        
+
         # Setup manager connection socket
         self.manager_conn_socket = self.get_new_socket(1)
 
@@ -344,7 +351,8 @@ class Peer:
                 self.username = username
                 self.server_port = num
                 self.peer_server_socket = self.get_new_socket(2)
-                self.peer_server_socket.bind((self.server_host, self.server_port))
+                self.peer_server_socket.bind(
+                    (self.server_host, self.server_port))
                 self.peer_server_socket.listen(self.max_peers)
                 if not self.connect_manager():
                     print("Username already exists ...")
